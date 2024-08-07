@@ -1,3 +1,28 @@
+# Fork Implementations
+
+This fork of Evilginx added the following features:
+
+## Certificate from Disk
+
+I have added the -cert and the -key flags which are only applicable with the -developer flag.
+
+Provide any certificate (in PEM format) from the disk with a key file (also PEM format) and the server will use that certificate instead of generating a self-signed one.
+
+Example:
+
+```bash
+./evilginx -developer -cert /path/to/cert.pem -key /path/to/key.pem -p phishlets/
+```
+
+This way you can use your own certificate for the phishing server for example a wildcard certificate you manually requested from Let's Encrypt.
+
+Advantages of the wildcard certificate:
+
+- The phishing subdomain will remain a secret because the subdomain would be leaked during the certificate request
+- You won't need to point the DNS server to the phishing server
+
+-----------------------
+
 <p align="center">
   <img alt="Evilginx2 Logo" src="https://raw.githubusercontent.com/kgretzky/evilginx2/master/media/img/evilginx2-logo-512.png" height="160" />
   <p align="center">

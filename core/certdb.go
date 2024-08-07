@@ -347,3 +347,49 @@ func (o *CertDb) getSelfSignedCertificate(host string, phish_host string, port i
 	o.tlsCache[host] = cert
 	return cert, nil
 }
+
+func (o *CertDb) getCertificateFromDisk(host string, phish_host string, port int, certificateFilePath string, privateKeyFilePath string) (cert *tls.Certificate, err error) {
+	cert, ok := o.tlsCache[host]
+	if ok {
+		return cert, nil
+	}
+
+	privateKeyPemData, err := ioutil.ReadFile(privateKeyFilePath)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error reading pem file: %s, is it there?\n", err)
+		return
+	}
+
+	block, _ := pem.Decode(privateKeyPemData)
+	if block == nil {
+		fmt.Fprintf(os.Stderr, "Error decoding pem file: %s, is it in PEM format?\n", err)
+		return
+	}
+
+	pkey, err := x509.ParsePKCS8PrivateKey(block.Bytes)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error parsing private key: %s\n", err)
+		return
+	}
+
+	// get derBytes from file instead of creating new certificate
+	pemBytes, err := ioutil.ReadFile(certificateFilePath)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error reading cert file: %s, is it there?\n", err)
+		return
+	}
+
+	blockForCertificate, _ := pem.Decode(pemBytes)
+	if blockForCertificate == nil {
+		fmt.Fprintf(os.Stderr, "Error decoding cert file: %s\n", err)
+		return
+	}
+
+	cert = &tls.Certificate{
+		Certificate: [][]byte{blockForCertificate.Bytes, o.caCert.Certificate[0]},
+		PrivateKey:  pkey,
+	}
+
+	o.tlsCache[host] = cert
+	return cert, nil
+}
